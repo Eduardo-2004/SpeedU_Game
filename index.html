@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <title>SpeedU</title>
+    <script src="Sprite.js"></script>
+
+    
+    <meta charset="utf-8"/>
+  
+    
+
+        <style> 
+       
+       /*centralizando o canvas na tela*/
+            canvas{
+
+              position: absolute;
+              top: 0px;
+              bottom:0px;
+              left:0px;
+              right:0px; 
+              margin: auto;
+
+            }
+        </style>
+
+
+    </head>
+  
+      <body>
+    
+        <script>
+            //variáveis do jogo (variáveis globais)
+            var canvas, ctx, LARGURA, ALTURA, frames = 0, maxPulos = 6, velocidade = 10, estadoAtual,
+             record, img, bgBoneco,
+
+            //enumeração de estados
+             estados = {
+
+              jogar:0,
+              jogando:1,
+              perdeu:2
+
+             },
+            //definindo a variável 'chão' separadamente 
+        
+             chao ={
+         
+                //definindo a posição em relação ao eixo y (do background)
+                 y:630,
+
+                 x:0,
+                
+                 //definindo altura
+                 altura:70,
+
+              atualiza: function(){
+
+                this.x -= velocidade;
+
+                if(this.x <= -30){
+
+                  this.x = 0;
+
+                }
+
+              },
+
+                 //desenhando tela
+                 desenha: function(){
+
+                  spriteChao.desenha(this.x, this.y);
+                  spriteChao.desenha(this.x + spriteChao.largura, this.y );
+                
+                }
+              },
+
+             //design e estruturação dos obstáculos 
+             obstaculo = {
+               
+              obs: [],
+
+              //cores dos obstáculos
+                cores: ["#1C5454","#D93F8E","#9b0000","#D9D43F","#8B4513"],
+                tempoInsere: 0,
+
+                 insere:function(){
+                
+                 this.obs.push({
+
+                  x: LARGURA,
+                
+                  largura:50,
+
+                  altura: 70 + Math.floor(82 * Math.random()),
+
+                  cor: this.cores[Math.floor(5 * Math.random())]
+
+                 });//({}) isso ocorre, pois vamos inserir um objeto dentro da função 
+              
+                 this.tempoInsere = 30 + Math.floor (37 * Math.random());
+              
+              
+              },
+              
+                atualiza: function(){
+                
+               if(this.tempoInsere == 0){
+               
+                this.insere();
+
+                } 
+                else{ 
+                
+                  this.tempoInsere--;
+               
+                }
+
+
+               
+                for(var i = 0, tam = this.obs.length; i < tam; i++ ){
+
+                  var obtl = this.obs[i];
+
+                    obtl.x -= velocidade;
+                      
+                    //Colisão =>  A colisão entre quadrados e rectângulos ocorre quando
+                    // o left (coordenada onde começa a ser desenhado) do objecto A for 
+                    // menor que o left mais o width (largura) do object o B e o left mais
+                    // o width do objecto A for maior que o left do objecto B e o mesmo com top e height. 
+                    //#pesquisar mais sobre;
+                   
+                    if(bloco.x < obtl.x + obtl.largura && bloco.x + bloco.largura >= obtl.x && bloco.y + bloco.altura >= chao.y - obtl.altura){
+
+                          estadoAtual = estados.perdeu;
+
+                    }
+
+                    else if(obtl.x == 0){
+                    
+                      bloco.score++;
+                 
+                    }
+                    else if(obtl.x <= obtl.LARGURA) {
+
+                      this.obtl.splice(i,1);
+                      tam--;
+                      i--;  
+                  }
+                }
+               },
+               
+               //quando perdermos zeramos o array para limpar o quadrante  
+               limpa: function(){
+
+              this.obs = [];
+
+
+               },
+
+               // desenha blocos, personagens e chão
+              desenha: function(){
+
+              for( var i = 0, tam = this.obs.length; i < tam; i++ ){
+ 
+                var  obs= this.obs[i];
+
+                  ctx.fillStyle = obs.cor;
+                  ctx.fillRect(obs.x, chao.y - obs.altura, obs.largura, obs.altura);
+
+                  }
+              }
+          };
+            
+          // definindo a variavel bloco separadamente
+              bloco ={
+
+                    // iniciando o bloco na posição (50,0) -> (x,y) ;
+                    x:50,
+                  
+                    y:0,
+                    
+                    // altura do bloco
+                    altura:140,
+                   
+                    // largura do bloco
+                    largura:95,
+                    
+                    // cor do bloco/bolinha 
+                    cor:"transparent",
+                    
+                    // declarando a gravidade do bloco
+                    gravidade:1.5,
+                    
+                    // desclarando a velocidade 
+                    velocidade:4,
+                    
+                    //declarando força do pulo 
+                    forcaPulo:20,
+                    
+                    //pulos (incrementaremos com maxPulos)
+                    qntPulos:0,
+
+                    // score inicial
+                    score:0,
+
+                    // girando personagem
+                    rotacao:0,
+                  
+                    //atualização do bloco
+                    atualiza: function(){
+
+                      //estabilizando o bloco 
+                      //Através da relação de velocidade e gravidade
+                      
+                      this.velocidade += this.gravidade;
+                        
+                      this.y += this.velocidade;
+
+                      // sempre rotacionando o personagem
+                      // this.rotacao += Math.PI / 360 * velocidade;
+                     
+                      if(this.y > chao.y - this.altura){
+
+                        this.y = chao.y - this.altura;
+                    
+                        this.qntPulos = 0;
+                    
+                  }  
+                },
+                   
+                // declarando condição para pular
+                   pula: function(){
+              
+                  if(this.qntPulos < maxPulos){
+
+                    this.velocidade = -this.forcaPulo;
+
+                    this.qntPulos++;
+              
+                } 
+              },   
+              
+              
+              reset: function(){
+               
+                //voltando para o estado inicial
+                this.velocidade = 0;
+                this.y = 0;
+
+                if(this.score > record){
+
+                    localStorage.setItem("record", this.score);
+
+                    record = this.score;
+
+                }
+
+                this.score = 0;
+              },
+
+              // desenhando o bloco
+            
+                desenha: function(){    
+                
+                  ctx.fillStyle = this.cor;
+                
+                  ctx.fillRect (this.x, this.y, this.largura, this.altura);
+              
+                  ctx.save();
+                  // operações para rotacionar
+                  
+                  ctx.translate(this.x + this.largura / 2, this.y + this.altura / 2);
+                 
+                  //  ctx.rotate(this.rotacao);
+                  
+                  bonecoAni.desenha(-this.largura / 2, -this.altura / 2);
+                 
+                  ctx.restore();
+
+                  
+               } 
+             }
+
+           
+             // clicou o bloco pula
+            function clique(event){
+
+              if(estadoAtual == estados.jogando)
+                
+                bloco.pula();
+
+              else if(estadoAtual == estados.jogar)
+              
+                estadoAtual = estados.jogando; 
+
+              else if(estadoAtual == estados.perdeu){
+                
+                obstaculo.limpa();
+                estadoAtual = estados.jogar;
+                bloco.reset();
+              }
+            } 
+
+            // ficará fazendo o loop/ Atualizando e desenhará na canvas
+            function roda() {
+           
+              atualiza();
+              desenha();
+              
+              window.requestAnimationFrame(roda);
+             }
+  
+               function atualiza() {
+              
+          
+            
+               // sempre atualizando o bloco  
+               bloco.atualiza();
+
+              if( estadoAtual == estados.jogando)
+               // atualizando os obstáculos
+              obstaculo.atualiza();
+           
+              chao.atualiza();
+             }
+
+               // design do quadrante
+              function desenha() {
+              
+              
+              //  ctx.fillStyle = "blue"; //background-color
+              //  ctx.fillRect(0, 0, LARGURA, ALTURA); // pegará todo o quadrante (largura X altura) (600X600)
+                
+                bg.desenha(0,0);
+                
+
+              // score design
+              ctx.fillStyle = "#fff";
+              ctx.font = "50px Arial";
+              ctx.fillText(bloco.score, 40, 98); 
+            
+              //desenhando quadradinho jogar, jogando e perdeu
+              if(estadoAtual == estados.jogar){
+
+                //cor bloquinho -> verde
+                ctx.fillStyle = "#125a41";
+              
+                // x =LARGURA, y= ALTURA, 100PX, 100PX
+                 //centralizando o bloquinho verde
+                ctx.fillRect(LARGURA / 2 - 50, ALTURA / 2 - 50, 100, 100);
+              } 
+              
+              else if(estadoAtual == estados.perdeu) {
+
+                  // mesmo bloquinho, mas vermelho
+                  ctx.fillStyle = "Black";             
+                  ctx.fillRect (LARGURA / 2 - 50, ALTURA / 2 - 50, 100, 100);
+
+                  ctx.save();
+                  ctx.translate(LARGURA / 2, ALTURA / 2);
+                  ctx.fillStyle = "#000";
+                  ctx.fillText("Seu record:" + record, -150, 90)  
+                   // Novo Record na tela
+                    if(bloco.score > record){
+
+                     // Posicionamento do record-score
+                      ctx.fillText("Novo Recorde!", -150, -65);
+                      ctx.fillStyle = "White";
+
+                     } else if(record < 10){ 
+                                                 
+                        // (X, Y) -> X negativo => esquerda; Y negativo => baixo; 
+                        ctx.fillText("Record: " + record, -99, -65);
+
+                     } else if(record >= 10 && record < 100){
+
+                        ctx.fillText("Record " + record, -112, -65);
+
+                      }                       
+                    }  
+
+                    if(bloco.score < 10) 
+                    // Posicionamento do número-score
+                    ctx.fillText(bloco.score, -15, 15);
+                    else if(bloco.score >= 10)
+                    
+                    ctx.fillText(bloco.score, -28, 15)
+
+                    //restore -> restaura e faz loop novamente
+                    ctx.restore();
+
+                 if(estadoAtual == estados.jogando)
+                  
+                    obstaculo.desenha();
+                    chao.desenha();
+                    bloco.desenha();
+                   };
+         
+               function main (){
+
+               // altura da interface/janela do usuário
+               ALTURA = window.innerHeight; 
+
+               // largura da interface/janela do usuário
+               LARGURA = window.innerWidth;
+
+
+                if(LARGURA >= 1200){
+              
+                 LARGURA = 1200;
+                 ALTURA = 700;
+                    
+                
+              }    
+               
+              // criando o canvas para design 
+                 canvas = document.createElement("canvas");
+                 canvas.width = LARGURA;
+                 canvas.height = ALTURA; 
+
+              
+
+              function display() {
+        
+                 document.body.style.backgroundImage = "url('https://images.unsplash.com/photo-1631900493980-f1530424df4e?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80')";
+              
+                // canvas.style.border    
+                canvas.style.borderBottom = "8px solid  #125a41";
+
+                canvas.style.borderTop = "8px solid #125a41"
+             }
+
+              // borda da janela do usuário             
+              canvas.style.borderRadius = "15%";
+            
+              // criando o contexto e o colocando como "2D" 
+              ctx = canvas.getContext("2d"); 
+
+              // adicionando a canvas no html
+              document.body.appendChild(canvas);
+
+              // caso a pessoa clique executará a função a seguir
+              document.addEventListener("mousedown", clique);
+
+              //primeira tela com o bloquinho verde (estado.jogar)
+              estadoAtual = estados.jogar;
+              
+              // buscará registro existente no armazanamento local (record)
+              record = localStorage.getItem("Record");
+
+              if(record == null){
+
+                record = 0;
+             }
+                
+             img = new Image();
+             img.src = "imagens/everything-3.png";
+            
+             animalImage = new Image();
+             animalImage.src = "imagens/veado.png";
+
+            // background dos espaços restantes
+            display();
+             
+            // loop do jogo
+            roda();
+
+               } 
+        
+         // inicializa o jogo
+         main();
+
+      </script>
+
+   </body>
+</html>
